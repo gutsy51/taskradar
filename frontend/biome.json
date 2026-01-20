@@ -1,0 +1,78 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "src/**/*.json",
+      "src/**/*.css",
+      "src/**/*.scss",
+      "next.config.ts",
+      "drizzle.config.ts",
+      "postcss.config.mjs",
+      "bun.lock",
+      "package.json",
+      "tsconfig.json",
+      "components.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "performance": {
+        "noBarrelFile": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noUnknownAtRules": "off",
+        "noArrayIndexKey": "off"
+      },
+      "style": {
+        "useImportType": "error",
+        "useNodejsImportProtocol": "error"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "noStaticElementInteractions": "off",
+        "useSemanticElements": "off",
+        "useFocusableInteractive": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
+      }
+    },
+    "domains": {
+      "next": "recommended"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}
