@@ -1,0 +1,71 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Django backend for the Task Radar project."
+readme = "README.md"
+authors = [
+    { name = "Полуянов В.Н.", email = "vnpoluyanov@gmail.com" }
+]
+requires-python = ">=3.12,<4.0"
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+django = "^6.0.3"
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.15.9,<0.16.0)",
+    "mypy (>=1.20.0,<2.0.0)",
+    "bandit (>=1.9.4,<2.0.0)"
+]
+
+
+# Линтеры и форматтеры
+# Общие исключения для всех инструментов:
+# `venv/`, `.venv/`, `tests/`, `scripts/`, `docs/`, `migrations/`, `unversioned/`
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+fix = true
+show-fixes = true
+exclude = ["venv/", ".venv/", "tests/", "scripts/", "docs/", "migrations/", "unversioned/"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # Line too long, handled by black
+    "B008",  # Do not perform function calls in argument defaults
+    "W191",  # Indentation contains tabs
+]
+
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+warn_return_any = false
+exclude = "^(venv|.venv|tests|scripts|docs|migrations|unversioned)/"
+
+
+[tool.bandit]
+skips = [
+    "B101",  # Assert
+    "B404"   # Subprocess without shell=False
+]
+exclude_dirs = ["venv", ".venv", "tests", "scripts", "docs", "migrations", "unversioned"]

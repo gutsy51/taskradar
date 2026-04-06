@@ -1,0 +1,58 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-backend
+        name: ruff (backend)
+        entry: bash -c "cd backend && poetry run ruff check . --fix"
+        language: system
+        pass_filenames: false
+        files: ^backend/
+
+      - id: ruff-format-backend
+        name: ruff-format (backend)
+        entry: bash -c "cd backend && poetry run ruff format ."
+        language: system
+        pass_filenames: false
+        files: ^backend/
+
+      - id: mypy-backend
+        name: mypy (backend)
+        entry: bash -c "cd backend && poetry run mypy ."
+        language: system
+        pass_filenames: false
+        files: ^backend/
+
+      - id: bandit-backend
+        name: bandit (backend)
+        entry: bash -c "cd backend && poetry run bandit -r ."
+        language: system
+        pass_filenames: false
+        files: ^backend/
+
+      - id: ruff-ml
+        name: ruff (ml)
+        entry: bash -c "cd ml && poetry run ruff check . --fix"
+        language: system
+        pass_filenames: false
+        files: ^ml/
+
+      - id: ruff-format-ml
+        name: ruff-format (ml)
+        entry: bash -c "cd ml && poetry run ruff format ."
+        language: system
+        pass_filenames: false
+        files: ^ml/
+
+      - id: mypy-ml
+        name: mypy (ml)
+        entry: bash -c "cd ml && poetry run mypy ."
+        language: system
+        pass_filenames: false
+        files: ^ml/
+
+      - id: bandit-ml
+        name: bandit (ml)
+        entry: bash -c "cd ml && poetry run bandit -r ."
+        language: system
+        pass_filenames: false
+        files: ^ml/
