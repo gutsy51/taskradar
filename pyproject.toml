@@ -10,5 +10,5 @@ package-mode = false
 
 [dependency-groups]
 dev = [
-    "pre-commit == 4.2.0",
+    "pre-commit == 4.5.1",
 ]

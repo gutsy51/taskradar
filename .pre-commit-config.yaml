@@ -25,6 +25,7 @@ repos:
         args: ["-m", "mypy", "--config-file", "backend/pyproject.toml"]
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^backend/
         types: [python]
 
@@ -34,6 +35,7 @@ repos:
         args: ["-m", "bandit"]
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^backend/
         types: [python]
 
@@ -61,6 +63,7 @@ repos:
         args: ["-m", "mypy", "--config-file", "backend/pyproject.toml"]
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^libs/
         types: [python]
 
@@ -70,5 +73,6 @@ repos:
         args: ["-m", "bandit"]
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^libs/
         types: [python]
