@@ -1,0 +1,14 @@
+[project]
+name = "taskradar-workspace"
+version = "0.1.0"
+description = "Проект для общерепозиторных инструментов вроде pre-commit"
+requires-python = ">=3.12,<4.0"
+dependencies = []
+
+[tool.poetry]
+package-mode = false
+
+[dependency-groups]
+dev = [
+    "pre-commit == 4.2.0",
+]

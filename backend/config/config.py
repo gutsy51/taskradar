@@ -4,7 +4,6 @@ from typing import Annotated, Any
 from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent  # taskradar/backend/
 REPO_DIR = BASE_DIR.parent  # taskradar/
 LOG_DIR = BASE_DIR / "logs"

@@ -17,12 +17,18 @@ django = "6.0.3"
 pydantic = "2.12.5"
 pydantic-settings = "2.13.1"
 psycopg = { version = "3.2.12", extras = ["binary"] }
+numpy = "2.4.4"
+bleach = "6.3.0"
+emoji = "2.15.0"
+pymorphy3 = "2.0.6"
+sentence-transformers = "5.4.0"
 
 [dependency-groups]
 dev = [
     "ruff == 0.15.9",
     "mypy == 1.20.0",
-    "bandit == 1.9.4"
+    "bandit == 1.9.4",
+    "pre-commit (>=4.5.1,<5.0.0)"
 ]
 
 
@@ -35,9 +41,6 @@ target-version = "py313"
 fix = true
 show-fixes = true
 exclude = ["venv/", ".venv/", "tests/", "scripts/", "docs/", "migrations/", "unversioned/"]
-
-[tool.ruff.format]
-quote-style = "single"
 
 [tool.ruff.lint]
 select = [

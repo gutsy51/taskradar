@@ -91,6 +91,7 @@ instance/
 
 # Poetry
 poetry.lock
+!/poetry.lock
 
 # IPython
 profile_default/
@@ -140,6 +141,7 @@ cython_debug/
 
 # Ruff stuff
 .ruff_cache/
+.pre-commit-cache/
 
 # PyPI configuration file
 .pypirc

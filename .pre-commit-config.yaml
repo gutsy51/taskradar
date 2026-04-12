@@ -3,56 +3,72 @@ repos:
     hooks:
       - id: ruff-backend
         name: ruff (backend)
-        entry: bash -c "cd backend && poetry run ruff check . --fix"
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "ruff", "check", "--fix"]
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^backend/
+        types: [python]
 
       - id: ruff-format-backend
         name: ruff-format (backend)
-        entry: bash -c "cd backend && poetry run ruff format ."
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "ruff", "format"]
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^backend/
+        types: [python]
 
       - id: mypy-backend
         name: mypy (backend)
-        entry: bash -c "cd backend && poetry run mypy ."
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "mypy", "--config-file", "backend/pyproject.toml"]
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^backend/
+        types: [python]
 
       - id: bandit-backend
         name: bandit (backend)
-        entry: bash -c "cd backend && poetry run bandit -r ."
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "bandit"]
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^backend/
+        types: [python]
 
-      - id: ruff-ml
-        name: ruff (ml)
-        entry: bash -c "cd ml && poetry run ruff check . --fix"
+      - id: ruff-libs
+        name: ruff (libs)
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "ruff", "check", "--fix"]
         language: system
-        pass_filenames: false
-        files: ^ml/
+        pass_filenames: true
+        files: ^libs/
+        types: [python]
 
-      - id: ruff-format-ml
-        name: ruff-format (ml)
-        entry: bash -c "cd ml && poetry run ruff format ."
+      - id: ruff-format-libs
+        name: ruff-format (libs)
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "ruff", "format"]
         language: system
-        pass_filenames: false
-        files: ^ml/
+        pass_filenames: true
+        files: ^libs/
+        types: [python]
 
-      - id: mypy-ml
-        name: mypy (ml)
-        entry: bash -c "cd ml && poetry run mypy ."
+      - id: mypy-libs
+        name: mypy (libs)
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "mypy", "--config-file", "backend/pyproject.toml"]
         language: system
-        pass_filenames: false
-        files: ^ml/
+        pass_filenames: true
+        files: ^libs/
+        types: [python]
 
-      - id: bandit-ml
-        name: bandit (ml)
-        entry: bash -c "cd ml && poetry run bandit -r ."
+      - id: bandit-libs
+        name: bandit (libs)
+        entry: backend/.venv/Scripts/python.exe
+        args: ["-m", "bandit"]
         language: system
-        pass_filenames: false
-        files: ^ml/
+        pass_filenames: true
+        files: ^libs/
+        types: [python]
