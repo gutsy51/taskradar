@@ -1,0 +1,13 @@
+[project]
+name = "taskradar-parsers"
+version = "0.1.0"
+description = "Парсеры фриланс-площадок для TaskRadar"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "selenium>=4.0",
+    "tqdm>=4.60",
+    "celery[redis]>=5.3",
+]
+
+[tool.poetry]
+package-mode = false

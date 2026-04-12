@@ -1,308 +1,270 @@
 import {
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Folder,
-  Monitor,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+  IconBriefcase,
+  IconClock,
+  IconCurrencyRubel,
+  IconExternalLink,
+  IconLayoutGrid,
+  IconRefresh,
+  IconTrendingUp,
+} from "@tabler/icons-react";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useHomeStats } from "@/hooks/use-api";
+import { useSourceStats, useTasks } from "@/hooks/use-api";
+import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-interface StatCardProps {
-  title: string;
-  value: number;
-  description?: string;
-  icon: React.ReactNode;
-  trend?: number;
-  variant?: "default" | "success" | "warning" | "destructive";
+const SOURCE_STYLES: Record<string, string> = {
+  "fl.ru":           "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  "freelancejob.ru": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  "freelance.ru":    "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  "weblancer.net":   "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300",
+  "workzilla.com":   "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+};
+
+const SOURCE_BORDER: Record<string, string> = {
+  "fl.ru":           "border-l-blue-500",
+  "freelancejob.ru": "border-l-green-500",
+  "freelance.ru":    "border-l-orange-500",
+  "weblancer.net":   "border-l-violet-500",
+  "workzilla.com":   "border-l-amber-500",
+};
+
+function formatPrice(price_amount: number | null, currency: string) {
+  if (price_amount === null) return null;
+  if (price_amount === 0) return "по договорённости";
+  const symbol = currency === "RUB" ? "₽" : currency;
+  return `${price_amount.toLocaleString("ru-RU")} ${symbol}`;
 }
 
-function StatCard({
-  title,
-  value,
-  description,
-  icon,
-  trend,
-  variant = "default",
-}: StatCardProps) {
-  const variantStyles = {
-    default: "border-border",
-    success:
-      "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30",
-    warning:
-      "border-yellow-200 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-950/30",
-    destructive:
-      "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30",
-  };
+function formatRelativeTime(dateStr: string) {
+  const date = new Date(dateStr.replace(" ", "T"));
+  const diffMs = Date.now() - date.getTime();
+  const diffH = Math.floor(diffMs / 3_600_000);
+  if (diffH < 1) return "только что";
+  if (diffH < 24) return `${diffH} ч назад`;
+  return `${Math.floor(diffH / 24)} дн назад`;
+}
+
+function RecentTaskCard({ task }: { task: Task }) {
+  const price = formatPrice(task.price_amount, task.currency);
+  const sourceStyle = SOURCE_STYLES[task.source] ?? "bg-gray-100 text-gray-800";
+  const borderStyle = SOURCE_BORDER[task.source] ?? "border-l-gray-400";
 
   return (
-    <Card
-      className={cn("transition-all hover:shadow-md", variantStyles[variant])}
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div className="h-4 w-4 text-muted-foreground">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        )}
-        {trend !== undefined && (
-          <div className="flex items-center mt-2">
-            <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-            <span className="text-xs text-green-500">+{trend}% этот месяц</span>
+    <Card className={cn("border-l-4 hover:shadow-md transition-all", borderStyle)}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", sourceStyle)}>
+                {task.source}
+              </span>
+              {price && (
+                <span className="text-sm font-semibold text-primary">{price}</span>
+              )}
+            </div>
+            <p className="text-sm font-medium leading-snug line-clamp-1">{task.title}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function StatCardSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-4 w-4" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-8 w-16 mb-2" />
-        <Skeleton className="h-3 w-32" />
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {formatRelativeTime(task.parsed_at)}
+            </span>
+            <a href={task.url} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+                <IconExternalLink className="h-3 w-3" />
+                Открыть
+              </Button>
+            </a>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 export default function Home() {
-  const { stats, isLoading, isError } = useHomeStats();
+  const { data: tasks, isLoading: tasksLoading, refetch: refetchTasks } = useTasks();
+  const { data: sources, isLoading: sourcesLoading, refetch: refetchSources } = useSourceStats();
 
-  if (isError) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive mb-2">
-            Ошибка загрузки
-          </h1>
-          <p className="text-muted-foreground">
-            Не удалось загрузить данные панели мониторинга
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const isLoading = tasksLoading || sourcesLoading;
+
+  const totalTasks    = sources?.reduce((s, x) => s + x.total, 0) ?? 0;
+  const newToday      = sources?.reduce((s, x) => s + x.new_today, 0) ?? 0;
+  const sourcesCount  = sources?.length ?? 0;
+  const withPrice     = tasks?.filter((t) => t.price_amount !== null && t.price_amount > 0).length ?? 0;
+
+  const recentTasks = tasks?.slice(0, 5) ?? [];
+
+  const handleRefresh = () => {
+    refetchTasks();
+    refetchSources();
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-8">
-      {/* Приветствие */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Добро пожаловать в PingTower
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Обзор вашей системы мониторинга и статистики
-        </p>
+      {/* Заголовок */}
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">TaskRadar</h1>
+          <p className="text-muted-foreground text-lg">
+            Агрегатор фриланс-заданий с&nbsp;ведущих площадок
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+          <IconRefresh className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+          Обновить
+        </Button>
       </div>
 
       {/* Основная статистика */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20 mb-1" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <>
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Всего заданий</CardTitle>
+                <IconBriefcase className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalTasks.toLocaleString("ru-RU")}</div>
+                <p className="text-xs text-muted-foreground mt-1">со всех источников</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Новых сегодня</CardTitle>
+                <IconTrendingUp className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  +{newToday.toLocaleString("ru-RU")}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">за последние 24 часа</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Источников</CardTitle>
+                <IconLayoutGrid className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{sourcesCount}</div>
+                <p className="text-xs text-muted-foreground mt-1">фриланс-площадок</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">С указанной ценой</CardTitle>
+                <IconCurrencyRubel className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                  {withPrice.toLocaleString("ru-RU")}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">из {tasks?.length ?? 0} показанных</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+
+      {/* Источники */}
       <div>
-        <h2 className="text-xl font-semibold mb-4 flex items-center">
-          <Activity className="h-5 w-5 mr-2" />
-          Основная статистика
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {isLoading ? (
-            <>
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-            </>
-          ) : (
-            <>
-              <StatCard
-                title="Всего мониторов"
-                value={stats.totalMonitors}
-                description={`${stats.activeMonitors} активных`}
-                icon={<Monitor />}
-                variant={stats.totalMonitors > 0 ? "default" : "warning"}
-              />
-              <StatCard
-                title="Пользователи"
-                value={stats.totalUsers}
-                description={`${stats.activeUsers} активных`}
-                icon={<Users />}
-                variant="default"
-              />
-              <StatCard
-                title="Проекты"
-                value={stats.totalProjects}
-                description="Общее количество"
-                icon={<Folder />}
-                variant="default"
-              />
-              <StatCard
-                title="Инциденты"
-                value={stats.totalIncidents}
-                description={`${stats.activeIncidents} активных`}
-                icon={<AlertCircle />}
-                variant={stats.activeIncidents > 0 ? "destructive" : "success"}
-              />
-            </>
-          )}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Источники</h2>
+          <Link href="/sources">
+            <Button variant="ghost" size="sm">Все источники →</Button>
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {isLoading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-6 w-16 mb-1" />
+                    <Skeleton className="h-3 w-20" />
+                  </CardContent>
+                </Card>
+              ))
+            : sources?.map((src) => (
+                <Card
+                  key={src.source}
+                  className="hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => {
+                    window.location.href = `/tasks?source=${encodeURIComponent(src.source)}`;
+                  }}
+                >
+                  <CardContent className="p-4 space-y-1">
+                    <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full inline-block",
+                      SOURCE_STYLES[src.source] ?? "bg-gray-100 text-gray-800")}>
+                      {src.source}
+                    </span>
+                    <div className="text-2xl font-bold pt-1">
+                      {src.total.toLocaleString("ru-RU")}
+                    </div>
+                    <p className="text-xs text-muted-foreground">заданий</p>
+                    <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                      <IconTrendingUp className="h-3 w-3" />
+                      +{src.new_today} сегодня
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <IconClock className="h-3 w-3" />
+                      {formatRelativeTime(src.last_parsed)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
         </div>
       </div>
 
-      {/* Статус системы */}
+      {/* Последние задания */}
       <div>
-        <h2 className="text-xl font-semibold mb-4 flex items-center">
-          <CheckCircle className="h-5 w-5 mr-2" />
-          Статус системы
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {isLoading ? (
-            <>
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-            </>
-          ) : (
-            <>
-              <Card
-                className={cn(
-                  "transition-all hover:shadow-md",
-                  stats.activeMonitors === stats.totalMonitors
-                    ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30"
-                    : "border-yellow-200 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-950/30",
-                )}
-              >
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center justify-between">
-                    Мониторы
-                    <Badge
-                      variant={
-                        stats.activeMonitors === stats.totalMonitors
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {stats.activeMonitors}/{stats.totalMonitors}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg font-semibold">
-                    {stats.totalMonitors > 0
-                      ? `${Math.round((stats.activeMonitors / stats.totalMonitors) * 100)}% активных`
-                      : "Нет мониторов"}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Процент активных мониторов
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className={cn(
-                  "transition-all hover:shadow-md",
-                  stats.activeIncidents === 0
-                    ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30"
-                    : "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30",
-                )}
-              >
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center justify-between">
-                    Инциденты
-                    <Badge
-                      variant={
-                        stats.activeIncidents === 0 ? "default" : "destructive"
-                      }
-                    >
-                      {stats.activeIncidents} активных
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg font-semibold">
-                    {stats.activeIncidents === 0
-                      ? "Все в порядке"
-                      : "Требует внимания"}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats.activeIncidents === 0
-                      ? "Нет активных инцидентов"
-                      : `${stats.activeIncidents} из ${stats.totalIncidents} активных`}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-all hover:shadow-md border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30">
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center justify-between">
-                    Пользователи
-                    <Badge variant="outline">
-                      {stats.activeUsers} активных
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg font-semibold">
-                    {stats.totalUsers > 0
-                      ? `${Math.round((stats.activeUsers / stats.totalUsers) * 100)}% активности`
-                      : "Нет пользователей"}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Процент активных пользователей
-                  </p>
-                </CardContent>
-              </Card>
-            </>
-          )}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Последние задания</h2>
+          <Link href="/tasks">
+            <Button variant="ghost" size="sm">Все задания →</Button>
+          </Link>
         </div>
-      </div>
 
-      {/* Быстрые действия */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Быстрые действия</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-105">
-            <CardContent className="p-6 text-center">
-              <Monitor className="h-8 w-8 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Создать монитор</h3>
-              <p className="text-sm text-muted-foreground">
-                Добавить новый монитор для отслеживания сервиса
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-105">
-            <CardContent className="p-6 text-center">
-              <Folder className="h-8 w-8 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Новый проект</h3>
-              <p className="text-sm text-muted-foreground">
-                Создать новый проект для организации мониторов
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-105">
-            <CardContent className="p-6 text-center">
-              <Users className="h-8 w-8 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Управление пользователями</h3>
-              <p className="text-sm text-muted-foreground">
-                Просмотр и управление пользователями системы
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-3 w-3/4" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recentTasks.map((task) => (
+              <RecentTaskCard key={task.id} task={task} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
