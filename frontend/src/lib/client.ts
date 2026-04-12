@@ -8,9 +8,178 @@ import type {
   PatchedMonitor,
   PatchedProject,
   Project,
+  SourceStats,
+  Task,
   TokenObtainPair,
   TokenRefresh,
 } from "./types";
+
+const MOCK_TASKS: Task[] = [
+  {
+    id: 1,
+    title: "Разработка интернет-магазина на Vue.js + Laravel",
+    description: "Требуется разработать интернет-магазин с каталогом товаров, корзиной, онлайн-оплатой и личным кабинетом. Дизайн-макет в Figma готов. Обязательна интеграция с 1С и транспортными компаниями.",
+    currency: "RUB",
+    url: "https://fl.ru/projects/12345/",
+    source: "fl.ru",
+    parsed_at: "2026-04-13 10:00:00",
+    content_hash: "hash001",
+    price_amount: 85000,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 2,
+    title: "Парсер данных с Wildberries и Ozon",
+    description: "Нужен парсер для сбора цен и остатков с маркетплейсов. Python, Selenium или API. Запуск по расписанию раз в 3 часа, выгрузка в Google Sheets и PostgreSQL.",
+    currency: "RUB",
+    url: "https://www.freelancejob.ru/projects/234567/",
+    source: "freelancejob.ru",
+    parsed_at: "2026-04-13 09:45:00",
+    content_hash: "hash002",
+    price_amount: 12000,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 3,
+    title: "Верстка лендинга по макету Figma",
+    description: "Готов макет в Figma, нужна верстка на HTML/CSS (Bootstrap или Tailwind). Адаптив под мобильные. Анимации по скроллу. Срок — 3 дня.",
+    currency: "RUB",
+    url: "https://freelance.ru/project/345678/",
+    source: "freelance.ru",
+    parsed_at: "2026-04-13 09:30:00",
+    content_hash: "hash003",
+    price_amount: 5000,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 4,
+    title: "Настройка VPS Ubuntu: Nginx, Docker, SSL",
+    description: "Требуется настроить VPS с Ubuntu 22.04: установка Nginx, Docker Compose, настройка Let's Encrypt. Развернуть 2 приложения в контейнерах.",
+    currency: "RUB",
+    url: "https://www.weblancer.net/projects/456789/",
+    source: "weblancer.net",
+    parsed_at: "2026-04-13 09:15:00",
+    content_hash: "hash004",
+    price_amount: 0,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 5,
+    title: "SEO-текст для главной страницы автосервиса",
+    description: "Написать SEO-оптимизированный текст на 2000 знаков для главной страницы автосервиса в Москве. Ключи предоставлю. Уникальность от 95%.",
+    currency: "RUB",
+    url: "https://client.work-zilla.com/freelancer/567890?from=detail",
+    source: "workzilla.com",
+    parsed_at: "2026-04-13 09:00:00",
+    content_hash: "hash005",
+    price_amount: 800,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 6,
+    title: "Мобильное приложение на Flutter (iOS + Android)",
+    description: "Нужно приложение для доставки еды: каталог, корзина, оплата, трекинг курьера на карте. Дизайн в Figma есть. Бэкенд на Django REST Framework.",
+    currency: "RUB",
+    url: "https://fl.ru/projects/12346/",
+    source: "fl.ru",
+    parsed_at: "2026-04-13 08:45:00",
+    content_hash: "hash006",
+    price_amount: 150000,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 7,
+    title: "Telegram-бот для записи клиентов в салон",
+    description: "Бот для красоты-салона: запись к мастеру, выбор услуги и времени, напоминания за 2 часа, интеграция с Google Calendar. Python, aiogram.",
+    currency: "RUB",
+    url: "https://www.freelancejob.ru/projects/234568/",
+    source: "freelancejob.ru",
+    parsed_at: "2026-04-13 08:30:00",
+    content_hash: "hash007",
+    price_amount: 18000,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 8,
+    title: "Дизайн логотипа и фирменного стиля",
+    description: "Разработка логотипа + гайдлайн для IT-стартапа. Нужны 3 концепции, исходники в AI и PDF. Тематика — облачное хранилище данных.",
+    currency: "RUB",
+    url: "https://freelance.ru/project/345679/",
+    source: "freelance.ru",
+    parsed_at: "2026-04-13 08:15:00",
+    content_hash: "hash008",
+    price_amount: 0,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 9,
+    title: "Наполнение интернет-магазина товарами",
+    description: "Загрузить 500 карточек товаров в OpenCart: название, описание, фото, характеристики. Данные в Excel, фото на Google Drive. Срок — 5 дней.",
+    currency: "RUB",
+    url: "https://client.work-zilla.com/freelancer/567891?from=detail",
+    source: "workzilla.com",
+    parsed_at: "2026-04-13 08:00:00",
+    content_hash: "hash009",
+    price_amount: 3500,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 10,
+    title: "Настройка CI/CD на GitHub Actions для Django",
+    description: "Нужно настроить CI/CD: автотесты pytest, линтер, сборка Docker-образа и деплой на VPS при пуше в main. Проект на Django + PostgreSQL.",
+    currency: "RUB",
+    url: "https://www.weblancer.net/projects/456790/",
+    source: "weblancer.net",
+    parsed_at: "2026-04-13 07:45:00",
+    content_hash: "hash010",
+    price_amount: null,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 11,
+    title: "React-дашборд для аналитики продаж",
+    description: "Дашборд с графиками продаж, фильтрами по периоду и категориям, экспортом в PDF. Данные через REST API (документация есть). Recharts или Victory.",
+    currency: "RUB",
+    url: "https://fl.ru/projects/12347/",
+    source: "fl.ru",
+    parsed_at: "2026-04-13 07:30:00",
+    content_hash: "hash011",
+    price_amount: 45000,
+    is_deleted: false,
+    published_at: null,
+  },
+  {
+    id: 12,
+    title: "Перевод сайта с WordPress на Next.js",
+    description: "Перенести существующий сайт (50+ страниц) с WordPress на Next.js 14 + headless CMS (Strapi или Contentful). SSR, оптимизация Core Web Vitals.",
+    currency: "RUB",
+    url: "https://www.freelancejob.ru/projects/234569/",
+    source: "freelancejob.ru",
+    parsed_at: "2026-04-13 07:15:00",
+    content_hash: "hash012",
+    price_amount: 65000,
+    is_deleted: false,
+    published_at: null,
+  },
+];
+
+const MOCK_SOURCE_STATS: SourceStats[] = [
+  { source: "fl.ru",           total: 2341, new_today: 47, last_parsed: "2026-04-13 10:00:00" },
+  { source: "freelancejob.ru", total: 1823, new_today: 31, last_parsed: "2026-04-13 09:45:00" },
+  { source: "freelance.ru",    total: 1245, new_today: 22, last_parsed: "2026-04-13 09:30:00" },
+  { source: "weblancer.net",   total: 3123, new_today: 58, last_parsed: "2026-04-13 10:05:00" },
+  { source: "workzilla.com",   total:  873, new_today: 15, last_parsed: "2026-04-13 09:15:00" },
+];
 
 const mock = true;
 
@@ -118,6 +287,10 @@ export async function apiRequest<T>(
       case `/api/reports/sla/`:
       case `/api/reports/summary/`:
         return Promise.resolve({} as T);
+      case "/api/tasks/":
+        return Promise.resolve(MOCK_TASKS as T);
+      case "/api/tasks/sources/":
+        return Promise.resolve(MOCK_SOURCE_STATS as T);
       default:
         // Для /api/users/list/ и других списков
         if (endpoint.startsWith("/api/users/list/")) {
@@ -154,7 +327,7 @@ export async function apiRequest<T>(
     authToken = localStorage.getItem("token") || undefined;
   }
   if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
+    headers.Authorization = `Bearer ${authToken}`;
   }
   const response = await client.request<T>({
     url: endpoint,
@@ -295,6 +468,14 @@ export function patchAlertRule(
 }
 export function deleteAlertRule(id: number, token?: string) {
   return apiRequest<void>(`/api/rules/${id}/`, "DELETE", undefined, token);
+}
+
+// TASKS
+export function getTasks() {
+  return apiRequest<Task[]>("/api/tasks/", "GET");
+}
+export function getSourceStats() {
+  return apiRequest<SourceStats[]>("/api/tasks/sources/", "GET");
 }
 
 // REPORTS

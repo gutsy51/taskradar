@@ -102,6 +102,8 @@ __pypackages__/
 
 # Celery stuff
 celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
 celerybeat.pid
 
 # SageMath parsed files
@@ -147,3 +149,7 @@ cython_debug/
 .pypirc
 
 *.npz
+
+# Chrome profiles
+chrome_profile/
+chrome_profile_fl/

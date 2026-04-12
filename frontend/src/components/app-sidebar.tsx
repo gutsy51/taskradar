@@ -1,13 +1,13 @@
 import {
-  IconDeviceHeartMonitor,
-  IconInnerShadowTop,
+  IconBriefcase,
+  IconLayoutGrid,
+  IconRadar,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { useSnapshot } from "valtio";
 import { Link } from "wouter";
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -29,9 +29,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const result = {
       navMain: [
         {
-          title: "Панели",
-          url: "/panels",
-          icon: IconDeviceHeartMonitor,
+          title: "Задания",
+          url: "/tasks",
+          icon: IconBriefcase,
+        },
+        {
+          title: "Источники",
+          url: "/sources",
+          icon: IconLayoutGrid,
         },
       ],
       navSecondary: [
@@ -39,16 +44,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Настройки",
           url: "#",
           icon: IconSettings,
-        },
-      ],
-      documents: [
-        {
-          name: "Внутренние сервисы",
-          url: "#",
-        },
-        {
-          name: "Внешние сервисы",
-          url: "#",
         },
       ],
     };
@@ -74,8 +69,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <Link href="/">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">PingTower</span>
+                <IconRadar className="!size-5" />
+                <span className="text-base font-semibold">TaskRadar</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -84,7 +79,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
 

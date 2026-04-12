@@ -7,6 +7,8 @@ import {
   getIncidents,
   getMonitors,
   getProjects,
+  getSourceStats,
+  getTasks,
   updateMonitor,
   updateProject,
   usersList,
@@ -19,6 +21,8 @@ export const QUERY_KEYS = {
   projects: ["projects"] as const,
   incidents: ["incidents"] as const,
   users: ["users"] as const,
+  tasks: ["tasks"] as const,
+  sourceStats: ["sourceStats"] as const,
   monitor: (id: number) => ["monitors", id] as const,
   project: (id: number) => ["projects", id] as const,
   incident: (id: number) => ["incidents", id] as const,
@@ -159,6 +163,23 @@ export function useDashboardData() {
       users.refetch();
     },
   };
+}
+
+// Задания
+export function useTasks() {
+  return useQuery({
+    queryKey: QUERY_KEYS.tasks,
+    queryFn: () => getTasks(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSourceStats() {
+  return useQuery({
+    queryKey: QUERY_KEYS.sourceStats,
+    queryFn: () => getSourceStats(),
+    staleTime: 5 * 60 * 1000,
+  });
 }
 
 // Хук для получения статистики домашней страницы
