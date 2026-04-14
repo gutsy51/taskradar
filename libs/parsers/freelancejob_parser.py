@@ -38,6 +38,9 @@ PRICE_RE = re.compile(
 PAGE_RE = re.compile(r"/projects/p(?P<page>\d+)/")
 
 
+DATE_RE = re.compile(r'Проект добавлен:\s*(\d{2})\.(\d{2})\.(\d{4})')
+
+
 @dataclass(slots=True)
 class JobRow:
     title: str
@@ -46,6 +49,7 @@ class JobRow:
     currency: str
     url: str
     parsed_at: str
+    published_at: Optional[str]
 
 
 def build_driver(
@@ -197,6 +201,7 @@ def parse_card(card, parsed_at: str) -> JobRow:
     price_amount = 0  # по договорённости по умолчанию
     currency = ""
     project_url = ""
+    published_at = None
 
     if blocks:
         try:
@@ -215,6 +220,15 @@ def parse_card(card, parsed_at: str) -> JobRow:
     except NoSuchElementException:
         price_amount, currency = 0, ""
 
+    # Дата публикации из "Проект добавлен: DD.MM.YYYY в HH:MM"
+    try:
+        x20_text = card.find_element(By.CSS_SELECTOR, "div.x20").text
+        m = DATE_RE.search(x20_text)
+        if m:
+            published_at = f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+    except NoSuchElementException:
+        pass
+
     return JobRow(
         title=title,
         description=description,
@@ -222,6 +236,7 @@ def parse_card(card, parsed_at: str) -> JobRow:
         currency=currency,
         url=project_url,
         parsed_at=parsed_at,
+        published_at=published_at,
     )
 
 
@@ -309,7 +324,7 @@ def write_csv(rows: Iterable[JobRow], output_path: str) -> None:
     if not rows:
         raise ValueError("Нет данных для записи в CSV.")
 
-    fieldnames = ["title", "description", "price_amount", "currency", "url", "parsed_at"]
+    fieldnames = ["title", "description", "price_amount", "currency", "url", "parsed_at", "published_at"]
     with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()

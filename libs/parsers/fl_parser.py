@@ -4,7 +4,7 @@ import re
 import sys
 import io
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, date as date_cls
 from database import normalize_price_amount
 from tqdm import tqdm
 from selenium import webdriver
@@ -118,6 +118,68 @@ class FLParser:
             return "EUR"
         return ""
 
+    def _parse_published_at(self, time_text: str, parse_time: datetime) -> str:
+        """Преобразует текст времени публикации в дату YYYY-MM-DD.
+
+        Обрабатывает:
+          - "X минут назад"
+          - "X час/часа/часов назад"
+          - "X часов Y минут назад"
+          - "сегодня, HH:MM"
+          - "вчера, HH:MM"
+          - "DD месяца, HH:MM"  (напр. "4 апреля, 09:06")
+        """
+        if not time_text:
+            return parse_time.strftime('%Y-%m-%d')
+
+        t = time_text.strip().lower()
+
+        # "X часов Y минут назад"
+        m = re.match(r'(\d+)\s+час[а-я]*\s+(\d+)\s+минут[а-я]*\s+назад', t)
+        if m:
+            total = int(m.group(1)) * 60 + int(m.group(2))
+            return (parse_time - timedelta(minutes=total)).strftime('%Y-%m-%d')
+
+        # "X часов/час/часа назад"
+        m = re.match(r'(\d+)\s+час[а-я]*\s+назад', t)
+        if m:
+            return (parse_time - timedelta(hours=int(m.group(1)))).strftime('%Y-%m-%d')
+
+        # "X минут назад"
+        m = re.match(r'(\d+)\s+минут[а-я]*\s+назад', t)
+        if m:
+            return (parse_time - timedelta(minutes=int(m.group(1)))).strftime('%Y-%m-%d')
+
+        # "сегодня, HH:MM"
+        if t.startswith('сегодня'):
+            return parse_time.strftime('%Y-%m-%d')
+
+        # "вчера, HH:MM"
+        if t.startswith('вчера'):
+            return (parse_time - timedelta(days=1)).strftime('%Y-%m-%d')
+
+        # "DD месяца, HH:MM"  e.g. "4 апреля, 09:06"
+        months = {
+            'января': 1, 'февраля': 2, 'марта': 3, 'апреля': 4,
+            'мая': 5, 'июня': 6, 'июля': 7, 'августа': 8,
+            'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12,
+        }
+        m = re.match(r'(\d+)\s+([а-я]+)', t)
+        if m:
+            month_name = m.group(2)
+            if month_name in months:
+                day, month = int(m.group(1)), months[month_name]
+                year = parse_time.year
+                try:
+                    result = date_cls(year, month, day)
+                    if result > parse_time.date():
+                        result = date_cls(year - 1, month, day)
+                    return result.strftime('%Y-%m-%d')
+                except ValueError:
+                    pass
+
+        return parse_time.strftime('%Y-%m-%d')
+
     def _has_next_page(self):
         """Проверяет, есть ли следующая страница"""
         try:
@@ -139,6 +201,7 @@ class FLParser:
 
         all_links = []
         page = 1
+        parse_time = datetime.now()
 
         while True:
             # Проверяем лимит страниц
@@ -180,12 +243,34 @@ class FLParser:
                 page_links = []
                 for project_element in project_elements:
                     try:
+                        # Пропускаем вакансии
+                        try:
+                            type_span = project_element.find_element(
+                                By.CSS_SELECTOR, "span.b-post__bold.b-layout__txt_inline-block"
+                            )
+                            if 'Вакансия' in type_span.text:
+                                continue
+                        except NoSuchElementException:
+                            pass
+
                         title_element = project_element.find_element(By.CSS_SELECTOR, "h2.b-post__title a")
                         href = title_element.get_attribute('href')
-                        if href:
-                            if not href.startswith('http'):
-                                href = self.base_url + href
-                            page_links.append(href)
+                        if not href:
+                            continue
+                        if not href.startswith('http'):
+                            href = self.base_url + href
+
+                        # Дата публикации
+                        published_at = parse_time.strftime('%Y-%m-%d')
+                        try:
+                            time_span = project_element.find_element(
+                                By.CSS_SELECTOR, "span.text-gray-opacity-4.text-7.mr-16"
+                            )
+                            published_at = self._parse_published_at(time_span.text.strip(), parse_time)
+                        except NoSuchElementException:
+                            pass
+
+                        page_links.append((href, published_at))
                     except NoSuchElementException:
                         continue
 
@@ -381,10 +466,11 @@ class FLParser:
                   bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]',
                   ncols=80) as pbar:
 
-            for i, project_url in enumerate(project_links, 1):
+            for i, (project_url, published_at) in enumerate(project_links, 1):
                 project_data, error_info = self._parse_project_detail(project_url, i, len(project_links))
 
                 if project_data:
+                    project_data['published_at'] = published_at
                     self.projects_data.append(project_data)
                     success_count += 1
                 else:
@@ -430,7 +516,7 @@ class FLParser:
 
         try:
             with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                fieldnames = ['title', 'description', 'price_amount', 'currency', 'url', 'parsed_at']
+                fieldnames = ['title', 'description', 'price_amount', 'currency', 'url', 'parsed_at', 'published_at']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(self.projects_data)

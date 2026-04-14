@@ -158,6 +158,7 @@ class WorkZillaParser:
             )
             self._random_delay(0.5, 1.0)
 
+            now = datetime.now()
             task_data = {
                 'title': '',
                 'description': '',
@@ -165,7 +166,8 @@ class WorkZillaParser:
                 'price_amount': None,
                 'currency': 'RUB',
                 'url': task_url,
-                'parsed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'parsed_at': now.strftime('%Y-%m-%d %H:%M:%S'),
+                'published_at': now.strftime('%Y-%m-%d'),
             }
 
             try:
@@ -195,6 +197,14 @@ class WorkZillaParser:
                     task_data['description'] = desc_element.text.strip()
                 except:
                     pass
+
+            if not task_data['title']:
+                return None, {
+                    'type': 'Incomplete',
+                    'message': 'Неполные данные задания (заголовок не найден)',
+                    'url': task_url,
+                    'num': task_num
+                }
 
             return task_data, None
 
@@ -236,6 +246,7 @@ class WorkZillaParser:
 
         success_count = 0
         error_count = 0
+        skipped_count = 0
         errors = []
 
         with tqdm(total=len(task_links), desc="Task Processing",
@@ -249,7 +260,10 @@ class WorkZillaParser:
                     self.tasks_data.append(task_data)
                     success_count += 1
                 else:
-                    error_count += 1
+                    if error_info and error_info.get('type') == 'Incomplete':
+                        skipped_count += 1
+                    else:
+                        error_count += 1
                     if error_info:
                         errors.append(error_info)
 
@@ -258,12 +272,15 @@ class WorkZillaParser:
 
         print("" + "=" * 60)
         print(f"Parsing complete! Successfully processed: {success_count}/{len(task_links)}")
+        if skipped_count:
+            print(f"Skipped (incomplete data): {skipped_count}")
         print("=" * 60)
 
-        if errors:
-            print(f"\nErrors encountered: {len(errors)}")
+        non_skipped_errors = [e for e in errors if e.get('type') != 'Incomplete']
+        if non_skipped_errors:
+            print(f"\nErrors encountered: {len(non_skipped_errors)}")
             errors_by_type = {}
-            for err in errors:
+            for err in non_skipped_errors:
                 err_type = err['type']
                 if err_type not in errors_by_type:
                     errors_by_type[err_type] = []
@@ -287,7 +304,7 @@ class WorkZillaParser:
 
         try:
             with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                fieldnames = ['title', 'description', 'duration', 'price_amount', 'currency', 'url', 'parsed_at']
+                fieldnames = ['title', 'description', 'duration', 'price_amount', 'currency', 'url', 'parsed_at', 'published_at']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(self.tasks_data)
