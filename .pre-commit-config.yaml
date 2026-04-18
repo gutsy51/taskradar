@@ -1,3 +1,17 @@
+exclude: >
+  (?x)^(
+    .*\/__pycache__\/.*|
+    .*\/\.mypy_cache\/.*|
+    .*\/\.ruff_cache\/.*|
+    .*\/\.pytest_cache\/.*|
+    .*\/\.tox\/.*|
+    .*\/\.nox\/.*|
+    .*\/venv\/.*|
+    .*\/\.venv\/.*|
+    backend\/.*\/migrations\/.*|
+    producer\/.*\/migrations\/.*
+  )$
+
 repos:
   - repo: local
     hooks:
