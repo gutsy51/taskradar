@@ -158,7 +158,8 @@ class WeblancerParser:
                     'price_amount': None,
                     'currency': '',
                     'url': '',
-                    'parsed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    'parsed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'published_at': None,
                 }
 
                 # Заголовок и ссылка
@@ -186,6 +187,19 @@ class WeblancerParser:
                 try:
                     desc_elem = article.find_element(By.CSS_SELECTOR, "p.text-gray-600")
                     order['description'] = desc_elem.text.strip()
+                except NoSuchElementException:
+                    pass
+
+                # Дата публикации — ищем span с паттерном DD.MM.YYYY среди footer-элементов
+                try:
+                    spans = article.find_elements(
+                        By.CSS_SELECTOR, "div.flex.items-center.whitespace-nowrap span"
+                    )
+                    for span in spans:
+                        m = re.match(r'(\d{2})\.(\d{2})\.(\d{4})$', span.text.strip())
+                        if m:
+                            order['published_at'] = f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+                            break
                 except NoSuchElementException:
                     pass
 
@@ -271,7 +285,7 @@ class WeblancerParser:
 
         try:
             with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                fieldnames = ['title', 'description', 'price_amount', 'currency', 'url', 'parsed_at']
+                fieldnames = ['title', 'description', 'price_amount', 'currency', 'url', 'parsed_at', 'published_at']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(self.orders_data)

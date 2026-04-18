@@ -159,7 +159,8 @@ class FreelanceRuParser:
                     'price_amount': None,
                     'currency': '',
                     'url': '',
-                    'parsed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    'parsed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'published_at': None,
                 }
 
                 # Заголовок и ссылка
@@ -189,6 +190,15 @@ class FreelanceRuParser:
                     project['currency'] = self._parse_currency(raw_cost)
                 except NoSuchElementException:
                     project['price_amount'] = 0
+
+                # Дата публикации — берём из атрибута datetime элемента <time>
+                try:
+                    time_elem = card.find_element(By.CSS_SELECTOR, "div.publish-time time.timeago")
+                    dt_attr = time_elem.get_attribute('datetime') or ''
+                    # datetime вида "2026-04-14T17:57:52+03:00" — берём только дату
+                    project['published_at'] = dt_attr[:10] if dt_attr else None
+                except NoSuchElementException:
+                    pass
 
                 if project['title'] or project['url']:
                     projects.append(project)
@@ -272,7 +282,7 @@ class FreelanceRuParser:
 
         try:
             with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                fieldnames = ['title', 'description', 'price_amount', 'currency', 'url', 'parsed_at']
+                fieldnames = ['title', 'description', 'price_amount', 'currency', 'url', 'parsed_at', 'published_at']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(self.projects_data)
