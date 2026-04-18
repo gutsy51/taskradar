@@ -1,0 +1,30 @@
+name: taskradar-dev
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: taskradar-postgres
+    restart: always
+    env_file:
+      - ../backend/.env
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - dev_default
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pg_data:
+
+networks:
+  dev_default:
+    driver: bridge
+    name: taskradar_dev_default

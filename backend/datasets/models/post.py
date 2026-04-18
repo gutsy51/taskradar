@@ -3,15 +3,6 @@ from django.utils import timezone
 
 
 class Post(models.Model):
-    """
-    Example rows from the draft dataset:
-
-    id,title,description,price_currency,url,source,published_at,content_hash,price,is_deleted
-    1,"Архитектор ИИ-интеграций / Senior AI Engineer (Node.js, Claude)","Ищем Senior-разработчика...",,"https://www.freelancejob.ru/vacancy/76882/",freelancejob.ru,2026-04-12 05:08:40,4a4ec1f67b91853417773cb1a3645eac,,0
-    2,"питон скрипт","написать питон скрипт",,"https://www.freelancejob.ru/vacancy/76876/",freelancejob.ru,2026-04-12 05:08:40,35d0056af78354caa17f94d73f8a6862,,0
-    3,"Настроить создание сделок из тильды в AmoCRM используя сервис ApiMonster","Настроить создание сделок...",RUB,"https://www.freelancejob.ru/vacancy/76866/",freelancejob.ru,2026-04-12 05:08:40,5eb30c46db78ff40a503c315a95d1d63,10000,0
-    """
-
     source = models.ForeignKey(
         "datasets.Source",
         verbose_name="Источник",
