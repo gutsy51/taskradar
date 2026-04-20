@@ -3,6 +3,7 @@ scratches/
 unversioned/
 infra/seed/data/*
 !infra/seed/data/.gitkeep
+/libs/ml/encoders/models_data/*/
 
 # Logs
 logs/

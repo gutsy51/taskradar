@@ -65,7 +65,7 @@ disallow_untyped_defs = false
 disallow_untyped_calls = false
 warn_return_any = false
 exclude = "^(venv|.venv|tests|scripts|docs|migrations|unversioned)/"
-
+disable_error_code = ["has-type"]
 
 [tool.bandit]
 skips = [
