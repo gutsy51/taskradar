@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "datasets.apps.DatasetsConfig",
     "search.apps.SearchConfig",
+    "parsers.apps.ParsersConfig",
 ]
 
 MIDDLEWARE = [
@@ -86,3 +87,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Celery
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_ENABLE_UTC = True
+CELERY_WORKER_POOL = "solo"  # Windows не поддерживает prefork

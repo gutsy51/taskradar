@@ -24,6 +24,9 @@ emoji = "2.15.0"  # Libs
 pymorphy3 = "2.0.6"  # Libs
 sentence-transformers = "5.4.0"  # Libs
 pgvector = "^0.4.2"
+celery = {version = ">=5.3", extras = ["redis"]}
+selenium = ">=4.0"
+tqdm = ">=4.60"
 
 [dependency-groups]
 dev = [

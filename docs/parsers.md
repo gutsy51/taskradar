@@ -1,98 +1,100 @@
 # Запуск парсеров
 
-Парсеры находятся в `libs/parsers/`. Используют Celery + Redis для планирования задач, результаты сохраняются в SQLite (`libs/parsers/taskradar.db`).
+Парсеры находятся в `backend/parsers/`. Интегрированы в Django, используют Celery + Redis, результаты сохраняются в PostgreSQL.
 
 ## Требования
 
-- Python 3.12+
-- Poetry
-- Redis (брокер для Celery)
+- Python 3.13 + Poetry
+- Docker Desktop (PostgreSQL + Redis)
 - Google Chrome + ChromeDriver
 
-## Установка
+## Установка зависимостей
 
-```bash
-# Из корня проекта
+```powershell
+cd backend
 poetry install
-poetry shell
 ```
 
-## Запуск Redis
+## Запуск окружения
 
-```bash
-docker run -d -p 6379:6379 redis:alpine
+**1. PostgreSQL** (из `infra/`):
+```powershell
+docker compose -f docker-compose.postgres.yml up -d
+```
+
+**2. Redis**:
+```powershell
+docker run -d -p 6379:6379 --name taskradar-redis redis:alpine
+```
+
+**3. Миграции** (первый раз, из `backend/`):
+```powershell
+python manage.py migrate
 ```
 
 ## Запуск Celery
 
-Нужно два терминала, оба из `libs/parsers/` внутри `poetry shell`.
+Из `backend/`:
 
 **Терминал 1 — воркер:**
-```bash
-celery -A celery_app worker --loglevel=info --pool=solo
+```powershell
+celery -A config worker --pool=solo -l info
 ```
 
 **Терминал 2 — планировщик:**
-```bash
-celery -A celery_app beat --loglevel=info
+```powershell
+celery -A config beat -l info
 ```
 
-После запуска beat парсеры будут запускаться автоматически каждый час.
+## Расписание (каждый час)
 
-## Расписание
-
-| Парсер          | Сайт              | Минута запуска |
-|-----------------|-------------------|----------------|
-| FL.ru           | fl.ru             | :05            |
-| FreelanceJob    | freelancejob.ru   | :10            |
-| Freelance.ru    | freelance.ru      | :15            |
-| Weblancer       | weblancer.net     | :20            |
-| WorkZilla       | workzilla.com     | :25            |
+| Парсер       | Сайт            | Минута |
+|--------------|-----------------|--------|
+| FL.ru        | fl.ru           | :05    |
+| FreelanceJob | freelancejob.ru | :10    |
+| Freelance.ru | freelance.ru    | :15    |
+| Weblancer    | weblancer.net   | :20    |
+| WorkZilla    | workzilla.com   | :25    |
+| Векторизация | —               | :35    |
 
 ## Запуск парсера вручную
 
-```bash
-celery -A celery_app call tasks.run_fl_parser
-celery -A celery_app call tasks.run_freelancejob_parser
-celery -A celery_app call tasks.run_freelance_ru_parser
-celery -A celery_app call tasks.run_weblancer_parser
-celery -A celery_app call tasks.run_workzilla_parser
+```powershell
+# Из backend/
+python manage.py shell
+```
+
+```python
+from parsers.tasks import run_fl, run_freelancejob, run_freelance_ru, run_weblancer, run_workzilla
+run_fl.delay()
+```
+
+Или через Celery CLI:
+```powershell
+celery -A config call parsers.tasks.run_fl
 ```
 
 ## WorkZilla: первичная авторизация
 
-WorkZilla требует входа через браузер. Запусти один раз перед использованием:
+WorkZilla требует входа через браузер. Запусти один раз:
 
-```bash
-cd libs/parsers
-python login_once.py
+```powershell
+cd backend
+python -m parsers.workzilla_parser --login
 ```
 
 Авторизуйся в открывшемся Chrome — сессия сохранится в `chrome_profile/`.
 
-## Проверка базы данных
+## Очистка зависших задач в Redis
 
-```bash
-python -c "
-import sqlite3
-conn = sqlite3.connect('libs/parsers/taskradar.db')
-rows = conn.execute('SELECT source, COUNT(*) FROM projects GROUP BY source').fetchall()
-for r in rows: print(r)
-conn.close()
-"
+Если воркер был прерван через Ctrl+C — задача могла остаться в очереди:
+
+```powershell
+celery -A config purge
 ```
 
-Или открой `taskradar.db` в [DB Browser for SQLite](https://sqlitebrowser.org/).
+## Проверка данных в БД
 
-## Структура таблицы `projects`
-
-| Поле        | Тип  | Описание                          |
-|-------------|------|-----------------------------------|
-| id          | INT  | Первичный ключ                    |
-| title       | TEXT | Название проекта                  |
-| description | TEXT | Описание                          |
-| price       | TEXT | Бюджет                            |
-| currency    | TEXT | Валюта (RUB, USD, EUR)            |
-| url         | TEXT | Ссылка на проект                  |
-| source      | TEXT | Агрегатор (fl.ru, weblancer.net…) |
-| parsed_at   | TEXT | Дата и время парсинга             |
+```powershell
+docker exec -it taskradar-postgres psql -U postgres -d taskradar -c "SELECT source_id, COUNT(*) FROM dataset_posts GROUP BY source_id;"
+```
