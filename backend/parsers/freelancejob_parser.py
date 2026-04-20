@@ -10,7 +10,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Iterable, Optional
 from urllib.parse import urljoin
-from database import normalize_price_amount
+from .database import normalize_price_amount
 
 from tqdm import tqdm
 

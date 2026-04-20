@@ -5,7 +5,7 @@ import sys
 import io
 import random
 from datetime import datetime, timedelta, date as date_cls
-from database import normalize_price_amount
+from .database import normalize_price_amount
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.common.by import By
