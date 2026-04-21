@@ -55,7 +55,7 @@ def sync_projects(projects: list, source: str) -> dict:
     if not projects:
         return {'saved': 0, 'deleted': 0, 'restored': 0}
 
-    from datasets.models import Post, Source
+    from backend.datasets.models import Post, Source
 
     source_obj, _ = Source.objects.get_or_create(
         name=source,
@@ -89,11 +89,13 @@ def sync_projects(projects: list, source: str) -> dict:
                 raw_published = project.get('published_at')
                 published_at = None
                 if raw_published:
-                    try:
-                        naive = datetime.strptime(raw_published, '%Y-%m-%d %H:%M:%S')
-                        published_at = timezone.make_aware(naive)
-                    except (ValueError, TypeError):
-                        pass
+                    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d'):
+                        try:
+                            naive = datetime.strptime(raw_published, fmt)
+                            published_at = timezone.make_aware(naive)
+                            break
+                        except (ValueError, TypeError):
+                            continue
 
                 _, created = Post.objects.get_or_create(
                     source=source_obj,
@@ -101,7 +103,7 @@ def sync_projects(projects: list, source: str) -> dict:
                     defaults={
                         'title': title,
                         'description': description,
-                        'price': normalize_price_amount(project.get('price', '') or ''),
+                        'price': project.get('price_amount'),
                         'price_currency': project.get('currency', ''),
                         'content_hash': content_hash,
                         'published_at': published_at,

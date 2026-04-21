@@ -5,6 +5,7 @@ import sys
 import io
 import random
 from datetime import datetime
+from pathlib import Path
 from .database import normalize_price_amount
 from tqdm import tqdm
 from selenium import webdriver
@@ -13,6 +14,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 from selenium.webdriver.chrome.options import Options
+
+_PARSER_DIR = Path(__file__).resolve().parent
 
 if sys.platform == 'win32':
     try:
@@ -38,7 +41,7 @@ class WorkZillaParser:
         chrome_options = Options()
 
         if self.use_profile:
-            profile_dir = os.path.abspath(os.path.join(os.getcwd(), "chrome_profile"))
+            profile_dir = str(_PARSER_DIR / "chrome_profile")
             os.makedirs(profile_dir, exist_ok=True)
 
             chrome_options.add_argument(f"--user-data-dir={profile_dir}")
@@ -113,12 +116,23 @@ class WorkZillaParser:
             print(f"Loading error: {e}")
             return []
 
+        current = self.driver.current_url
+        if 'login' in current or 'auth' in current or 'signin' in current:
+            print(f"ERROR: Workzilla redirected to login page ({current}). "
+                  "Run WorkZillaParser(headless=False) once to log in and save the session.")
+            return []
+
         try:
             WebDriverWait(self.driver, 30).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "order-in-list"))
             )
         except TimeoutException:
-            print("ERROR: Task List Load Timeout")
+            current = self.driver.current_url
+            if 'login' in current or 'auth' in current or 'signin' in current:
+                print(f"ERROR: Workzilla requires login. Current URL: {current}. "
+                      "Run WorkZillaParser(headless=False) once to authenticate.")
+            else:
+                print(f"ERROR: Task List Load Timeout. Current URL: {current}")
             return []
 
         self._random_delay(1.5, 2.5)
