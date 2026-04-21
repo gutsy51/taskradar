@@ -183,8 +183,7 @@ class FLParser:
     def _has_next_page(self):
         """Проверяет, есть ли следующая страница"""
         try:
-            # Ищем кнопку "Следующая страница" в пагинации
-            next_link = self.driver.find_element(By.CSS_SELECTOR, ".b-pager__next a")
+            self.driver.find_element(By.CSS_SELECTOR, "a.fl-pagination-next")
             return True
         except NoSuchElementException:
             return False
@@ -264,13 +263,28 @@ class FLParser:
                         published_at = parse_time.strftime('%Y-%m-%d')
                         try:
                             time_span = project_element.find_element(
-                                By.CSS_SELECTOR, "span.text-gray-opacity-4.text-7.mr-16"
+                                By.CSS_SELECTOR, ".b-post__foot span.text-gray-opacity-4"
                             )
                             published_at = self._parse_published_at(time_span.text.strip(), parse_time)
                         except NoSuchElementException:
                             pass
 
-                        page_links.append((href, published_at))
+                        # Цена со страницы списка
+                        price_text = ""
+                        try:
+                            price_span = project_element.find_element(
+                                By.CSS_SELECTOR, ".b-post__grid_price .text-4"
+                            )
+                            price_text = self.driver.execute_script(
+                                "return Array.from(arguments[0].childNodes)"
+                                ".filter(n => n.nodeType === 3)"
+                                ".map(n => n.textContent).join('').trim()",
+                                price_span
+                            ) or ""
+                        except NoSuchElementException:
+                            pass
+
+                        page_links.append((href, published_at, price_text))
                     except NoSuchElementException:
                         continue
 
@@ -466,11 +480,14 @@ class FLParser:
                   bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]',
                   ncols=80) as pbar:
 
-            for i, (project_url, published_at) in enumerate(project_links, 1):
+            for i, (project_url, published_at, list_price_text) in enumerate(project_links, 1):
                 project_data, error_info = self._parse_project_detail(project_url, i, len(project_links))
 
                 if project_data:
                     project_data['published_at'] = published_at
+                    if not project_data.get('price_amount') and list_price_text:
+                        project_data['currency'] = self._parse_currency(list_price_text)
+                        project_data['price_amount'] = normalize_price_amount(list_price_text)
                     self.projects_data.append(project_data)
                     success_count += 1
                 else:
