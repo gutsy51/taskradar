@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
-  email: z.string().email("Введите корректный email"),
+  username: z.string().min(1, "Введите логин"),
   password: z.string().min(1, "Пароль обязателен"),
 });
 
@@ -43,7 +43,7 @@ export function LoginForm({
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -93,14 +93,15 @@ export function LoginForm({
 
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Логин</FormLabel>
                       <FormControl>
                         <Input
-                          type="email"
-                          placeholder="m@example.com"
+                          type="text"
+                          placeholder="username"
+                          autoComplete="username"
                           disabled={isLoading}
                           {...field}
                         />

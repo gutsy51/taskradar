@@ -1,13 +1,12 @@
 import {
   IconBriefcase,
+  IconChartBar,
   IconLayoutGrid,
   IconRadar,
-  IconSettings,
 } from "@tabler/icons-react";
 import { useSnapshot } from "valtio";
 import { Link } from "wouter";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -21,12 +20,9 @@ import {
 import { application } from "@/states/application";
 
 const NAV_MAIN = [
-  { title: "Задания",   url: "/tasks",   icon: IconBriefcase  },
-  { title: "Источники", url: "/sources", icon: IconLayoutGrid },
-];
-
-const NAV_SECONDARY = [
-  { title: "Настройки", url: "#", icon: IconSettings },
+  { title: "Задания",   url: "/tasks",     icon: IconBriefcase  },
+  { title: "Источники", url: "/sources",   icon: IconLayoutGrid },
+  { title: "Аналитика", url: "/analytics", icon: IconChartBar   },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -53,7 +49,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={NAV_MAIN} />
-        <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
       </SidebarContent>
 
       {user && (

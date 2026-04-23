@@ -10,6 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +27,7 @@ import { useSearchTasks, useSourceStats } from "@/hooks/use-api";
 import type { SearchTasksPayload } from "@/lib/client";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { application } from "@/states/application";
 
 const PAGE_SIZE = 20;
 
@@ -56,9 +58,11 @@ function formatRelativeTime(dateStr: string) {
   const date = new Date(dateStr.replace(" ", "T"));
   const diffMs = Date.now() - date.getTime();
   const diffH = Math.floor(diffMs / 3_600_000);
-  if (diffH < 1) return "только что";
+  if (diffH < 1)  return "только что";
   if (diffH < 24) return `${diffH} ч назад`;
-  return `${Math.floor(diffH / 24)} дн назад`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 7)  return `${diffD} дн назад`;
+  return date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 }
 
 function getPriceBadgeVariant(price: number | null) {
@@ -67,7 +71,7 @@ function getPriceBadgeVariant(price: number | null) {
   return "default" as const;
 }
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task, isSearch }: { task: Task; isSearch: boolean }) {
   const priceText   = formatPrice(task.price, task.price_currency);
   const sourceStyle = SOURCE_STYLES[task.source] ?? "bg-gray-100 text-gray-800";
   const borderStyle = SOURCE_BORDER[task.source] ?? "border-l-gray-400";
@@ -85,14 +89,21 @@ function TaskCard({ task }: { task: Task }) {
                 <IconCurrencyRubel className="h-3 w-3 mr-0.5" />
                 {priceText}
               </Badge>
-              <span className="text-xs text-muted-foreground ml-auto">
+              {isSearch && task.similarity !== null && (
+                <Badge variant="secondary" className="shrink-0 font-mono text-xs">
+                  {Math.round(task.similarity * 100)}%
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground ml-auto shrink-0">
                 {formatRelativeTime(task.published_at ?? task.collected_at)}
               </span>
             </div>
-            <h3 className="font-semibold text-sm leading-snug group-hover:text-primary transition-colors">
-              {task.title}
-            </h3>
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+            <Link href={`/tasks/${task.id}`}>
+              <h3 className="font-semibold text-sm leading-snug group-hover:text-primary transition-colors hover:underline">
+                {task.title}
+              </h3>
+            </Link>
+            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
               {task.description}
             </p>
           </div>
@@ -135,10 +146,12 @@ function buildPayload(
   query: string,
   source: string,
   priceFilter: string,
+  sort: string,
   page: number,
 ): SearchTasksPayload {
   const payload: SearchTasksPayload = {
     query,
+    sort: (sort === "price_asc" || sort === "price_desc") ? sort : (query ? "relevance" : "freshness"),
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
   };
@@ -222,20 +235,25 @@ export default function Tasks() {
   const [search, setSearch]           = useState("");
   const [source, setSource]           = useQueryState("source", parseAsString.withDefault("all"));
   const [priceFilter, setPriceFilter] = useState("all");
+  const [sort, setSort]               = useState<"freshness" | "price_asc" | "price_desc">("freshness");
   const [page, setPage]               = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    application.header = "Задания";
+    return () => { application.header = undefined; };
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 500);
     return () => clearTimeout(t);
   }, [search]);
 
-  // При смене фильтров возвращаемся на первую страницу
-  useEffect(() => { setPage(1); }, [debouncedSearch, source, priceFilter]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, source, priceFilter, sort]);
 
   const payload = useMemo(
-    () => buildPayload(debouncedSearch, source, priceFilter, page),
-    [debouncedSearch, source, priceFilter, page],
+    () => buildPayload(debouncedSearch, source, priceFilter, sort, page),
+    [debouncedSearch, source, priceFilter, sort, page],
   );
 
   const { data: searchResult, isLoading: tasksLoading, refetch } = useSearchTasks(payload);
@@ -249,12 +267,13 @@ export default function Tasks() {
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to   = Math.min(page * PAGE_SIZE, total);
 
-  const hasFilters = search || source !== "all" || priceFilter !== "all";
+  const hasFilters = search || source !== "all" || priceFilter !== "all" || sort !== "freshness";
 
   const clearFilters = () => {
     setSearch("");
     setSource("all");
     setPriceFilter("all");
+    setSort("freshness");
   };
 
   const handlePageChange = (p: number) => {
@@ -275,6 +294,7 @@ export default function Tasks() {
                 ? `${from}–${to} из ${total.toLocaleString("ru-RU")} заданий`
                 : "Нет заданий"}
             {source !== "all" && ` · ${source}`}
+            {debouncedSearch && ` · векторный поиск`}
           </p>
         </div>
         <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
@@ -286,13 +306,22 @@ export default function Tasks() {
       {/* Фильтры */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Поиск по названию или описанию..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className={cn("pl-10", search && "pr-9")}
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <IconX className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <Select value={source} onValueChange={setSource}>
@@ -324,6 +353,17 @@ export default function Tasks() {
           </SelectContent>
         </Select>
 
+        <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Сортировка" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="freshness">Сначала новые</SelectItem>
+            <SelectItem value="price_asc">Цена: от низкой</SelectItem>
+            <SelectItem value="price_desc">Цена: от высокой</SelectItem>
+          </SelectContent>
+        </Select>
+
         {hasFilters && (
           <Button variant="ghost" onClick={clearFilters} className="gap-1.5 shrink-0">
             <IconX className="h-4 w-4" />
@@ -335,15 +375,15 @@ export default function Tasks() {
       {/* Список заданий */}
       {isLoading ? (
         <div className="space-y-3">
-          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <TaskCardSkeleton key={i} />
           ))}
         </div>
       ) : tasks.length > 0 ? (
         <>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} isSearch={!!debouncedSearch} />
             ))}
           </div>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />

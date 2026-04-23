@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.db.models import Count, Max, Q
 from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
@@ -11,14 +13,14 @@ class SourceStatsView(View):
     def get(self, request: HttpRequest) -> JsonResponse:
         from datasets.models import Source
 
-        today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        since_24h = timezone.now() - timedelta(hours=24)
         rows = (
             Source.objects
             .annotate(
                 total=Count("posts", filter=Q(posts__is_deleted=False)),
                 new_today=Count(
                     "posts",
-                    filter=Q(posts__is_deleted=False, posts__collected_at__gte=today),
+                    filter=Q(posts__is_deleted=False, posts__published_at__gte=since_24h),
                 ),
                 last_collected=Max(
                     "posts__collected_at",

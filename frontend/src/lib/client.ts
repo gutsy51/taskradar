@@ -206,7 +206,7 @@ const MOCK_SOURCE_STATS: SourceStats[] = [
   { source: "workzilla.com",   total:  873, new_today: 15, last_parsed: "2026-04-13 09:15:00" },
 ];
 
-const mock = true;
+const mock = false;
 
 const client = axios.create({
   baseURL: "https://pingtower.nnstd.dev",
@@ -364,23 +364,30 @@ export async function apiRequest<T>(
 }
 
 // AUTH
-export function login(data: TokenObtainPair) {
-  return apiRequest<TokenObtainPair>("/api/auth/jwt/create/", "POST", data);
+export async function login(data: { username: string; password: string }) {
+  const response = await backendClient.post<{
+    access: string;
+    username: string;
+    email: string;
+    is_staff: boolean;
+  }>("/rest/v1/auth/login/", data);
+  return response.data;
 }
+
 export function refreshToken(data: TokenRefresh) {
   return apiRequest<TokenRefresh>("/api/auth/jwt/refresh/", "POST", data);
 }
 
 // USERS
 
-export function user() {
-  return apiRequest<{
+export async function user() {
+  const response = await backendClient.get<{
     id: number;
-    first_name: string;
-    last_name: string;
+    username: string;
     email: string;
     is_staff: boolean;
-  }>("/api/users/me/", "GET");
+  }>("/rest/v1/users/me/");
+  return response.data;
 }
 
 export function usersList(search?: string) {
@@ -508,12 +515,19 @@ const backendClient = axios.create({
   baseURL: "http://localhost:8000",
 });
 
+backendClient.interceptors.request.use((config) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 export interface SearchTasksPayload {
   query?: string;
   source?: string[];
   price_is_specified?: boolean;
   price_min?: number;
   price_max?: number;
+  sort?: "relevance" | "freshness" | "price_asc" | "price_desc";
   limit?: number;
   offset?: number;
 }
@@ -525,6 +539,28 @@ export async function searchTasksAPI(payload: SearchTasksPayload): Promise<Searc
 
 export async function getSourceStatsAPI(): Promise<SourceStats[]> {
   const response = await backendClient.get<SourceStats[]>("/rest/v1/sources/");
+  return response.data;
+}
+
+export interface AnalyticsData {
+  total: number;
+  with_price: number;
+  by_date: { date: string; count: number }[];
+  by_source: { source: string; count: number; avg_price: number | null }[];
+}
+
+export async function getAnalyticsAPI(): Promise<AnalyticsData> {
+  const response = await backendClient.get<AnalyticsData>("/rest/v1/analytics/");
+  return response.data;
+}
+
+export async function getTaskAPI(id: number): Promise<Task> {
+  const response = await backendClient.get<Task>(`/rest/v1/tasks/${id}/`);
+  return response.data;
+}
+
+export async function getSimilarTasksAPI(id: number, limit = 8): Promise<{ items: Task[] }> {
+  const response = await backendClient.get<{ items: Task[] }>(`/rest/v1/tasks/${id}/similar/?limit=${limit}`);
   return response.data;
 }
 

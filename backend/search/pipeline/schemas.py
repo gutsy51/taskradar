@@ -10,6 +10,8 @@ from .keywords import KeywordMatcher
 class SearchSort(StrEnum):
     RELEVANCE = "relevance"
     FRESHNESS = "freshness"
+    PRICE_ASC = "price_asc"
+    PRICE_DESC = "price_desc"
 
 
 class SearchDateRange(BaseModel):

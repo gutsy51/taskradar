@@ -15,7 +15,7 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
 
-        {header ?? <h1 className="text-base font-medium">{header}</h1>}
+        <h1 className="text-base font-medium">{header ?? "TaskRadar"}</h1>
       </div>
     </header>
   );

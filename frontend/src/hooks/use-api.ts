@@ -4,11 +4,14 @@ import {
   createProject,
   deleteMonitor,
   deleteProject,
+  getAnalyticsAPI,
   getIncidents,
   getMonitors,
   getProjects,
-  getTasks,
+  getSimilarTasksAPI,
   getSourceStatsAPI,
+  getTaskAPI,
+  getTasks,
   searchTasksAPI,
   updateMonitor,
   updateProject,
@@ -190,6 +193,32 @@ export function useSourceStats() {
     queryKey: QUERY_KEYS.sourceStats,
     queryFn: () => getSourceStatsAPI(),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAnalytics() {
+  return useQuery({
+    queryKey: ["analytics"],
+    queryFn: () => getAnalyticsAPI(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useTask(id: number) {
+  return useQuery({
+    queryKey: ["task", id],
+    queryFn: () => getTaskAPI(id),
+    staleTime: 5 * 60 * 1000,
+    enabled: id > 0,
+  });
+}
+
+export function useSimilarTasks(id: number) {
+  return useQuery({
+    queryKey: ["task", id, "similar"],
+    queryFn: () => getSimilarTasksAPI(id),
+    staleTime: 5 * 60 * 1000,
+    enabled: id > 0,
   });
 }
 

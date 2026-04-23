@@ -54,6 +54,11 @@ class FilterStage:
         if params.price.max_amount is not None:
             queryset = queryset.filter(price__lte=params.price.max_amount)
 
+        from ..schemas import SearchSort
+        if params.sort == SearchSort.PRICE_ASC:
+            return queryset.order_by(F("price").asc(nulls_last=True), F("published_at").desc(nulls_last=True))
+        if params.sort == SearchSort.PRICE_DESC:
+            return queryset.order_by(F("price").desc(nulls_last=True), F("published_at").desc(nulls_last=True))
         return queryset.order_by(F("published_at").desc(nulls_last=True), "-id")
 
     @staticmethod

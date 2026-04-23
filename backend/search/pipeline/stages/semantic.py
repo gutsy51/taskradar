@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 from django.db import connection, transaction
-from django.db.models import Case, FloatField, IntegerField, QuerySet, Value, When
+from django.db.models import Case, F, FloatField, IntegerField, QuerySet, Value, When
 from numpy.typing import NDArray
 from pgvector.django import CosineDistance
 
@@ -121,6 +121,16 @@ class SemanticStage:
         if params.sort == SearchSort.FRESHNESS:
             return reranked_queryset.order_by(
                 "-published_at", "-similarity", "candidate_rank", "-id"
+            )
+
+        if params.sort == SearchSort.PRICE_ASC:
+            return reranked_queryset.order_by(
+                F("post__price").asc(nulls_last=True), "-similarity", "candidate_rank"
+            )
+
+        if params.sort == SearchSort.PRICE_DESC:
+            return reranked_queryset.order_by(
+                F("post__price").desc(nulls_last=True), "-similarity", "candidate_rank"
             )
 
         return reranked_queryset.order_by("-similarity", "-published_at", "candidate_rank", "-id")
