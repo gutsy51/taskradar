@@ -3,9 +3,7 @@ import {
   IconLayoutGrid,
   IconRadar,
   IconSettings,
-  IconUsers,
 } from "@tabler/icons-react";
-import { useMemo } from "react";
 import { useSnapshot } from "valtio";
 import { Link } from "wouter";
 import { NavMain } from "@/components/nav-main";
@@ -22,42 +20,18 @@ import {
 } from "@/components/ui/sidebar";
 import { application } from "@/states/application";
 
+const NAV_MAIN = [
+  { title: "Задания",   url: "/tasks",   icon: IconBriefcase  },
+  { title: "Источники", url: "/sources", icon: IconLayoutGrid },
+];
+
+const NAV_SECONDARY = [
+  { title: "Настройки", url: "#", icon: IconSettings },
+];
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useSnapshot(application);
 
-  const data = useMemo(() => {
-    const result = {
-      navMain: [
-        {
-          title: "Задания",
-          url: "/tasks",
-          icon: IconBriefcase,
-        },
-        {
-          title: "Источники",
-          url: "/sources",
-          icon: IconLayoutGrid,
-        },
-      ],
-      navSecondary: [
-        {
-          title: "Настройки",
-          url: "#",
-          icon: IconSettings,
-        },
-      ],
-    };
-
-    if (user?.staff) {
-      result.navMain.push({
-        title: "Пользователи",
-        url: "/users",
-        icon: IconUsers,
-      });
-    }
-
-    return result;
-  }, [user]);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -78,8 +52,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={NAV_MAIN} />
+        <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
       </SidebarContent>
 
       {user && (

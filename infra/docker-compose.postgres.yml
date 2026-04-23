@@ -1,6 +1,15 @@
 name: taskradar-dev
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: taskradar-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - dev_default
+
   postgres:
     image: pgvector/pgvector:pg17
     container_name: taskradar-postgres

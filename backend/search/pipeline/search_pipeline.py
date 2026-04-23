@@ -12,8 +12,12 @@ class SearchPipeline:
 
     @classmethod
     def search(cls, params: SearchParams) -> SearchResult:
-        queryset = FilterStage.apply(params)
         query_vector = BuildQueryStage.build_query_embedding(params.query)
+
+        if query_vector is None and not params.has_keywords:
+            return cls.__browse(params)
+
+        queryset = FilterStage.apply(params)
         queryset = SemanticStage.apply(queryset, query_vector, params)
 
         if params.has_keywords:
@@ -30,12 +34,25 @@ class SearchPipeline:
             query=params.query,
             applied_filters=cls.__build_applied_filters(params),
             items=[
-                SerializeStage.serialize(
-                    candidate,
-                    getattr(candidate, "similarity", None),
-                )
+                SerializeStage.serialize(candidate, getattr(candidate, "similarity", None))
                 for candidate in paginated_items
             ],
+        )
+
+    @classmethod
+    def __browse(cls, params: SearchParams) -> SearchResult:
+        """Режим просмотра без поиска: напрямую из Post, без векторов."""
+        queryset = FilterStage.apply_posts(params)
+        total = queryset.count()
+        paginated = list(queryset[params.offset : params.offset + params.limit])
+        return SearchResult(
+            total=total,
+            limit=params.limit,
+            offset=params.offset,
+            sort=params.sort,
+            query=params.query,
+            applied_filters=cls.__build_applied_filters(params),
+            items=[SerializeStage.serialize_post(post) for post in paginated],
         )
 
     @classmethod

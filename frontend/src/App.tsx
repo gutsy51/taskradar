@@ -13,7 +13,6 @@ import Authentication from "@/pages/authenticatuon";
 import Home from "@/pages/home";
 import Sources from "@/pages/sources";
 import Tasks from "@/pages/tasks";
-import Users from "@/pages/users";
 import { application } from "@/states/application";
 import { user } from "./lib/client";
 
@@ -80,7 +79,6 @@ export function App() {
         <Route path="/"       component={createLayout(Home)}    />
         <Route path="/tasks"   component={createLayout(Tasks)}   />
         <Route path="/sources" component={createLayout(Sources)} />
-        <Route path="/users"   component={createLayout(Users)}   />
         <Route path="/users/authentication" component={Authentication} />
         <Route>
           <h3>Страница не найдена</h3>

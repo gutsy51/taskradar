@@ -7,11 +7,13 @@ import {
   getIncidents,
   getMonitors,
   getProjects,
-  getSourceStats,
   getTasks,
+  getSourceStatsAPI,
+  searchTasksAPI,
   updateMonitor,
   updateProject,
   usersList,
+  type SearchTasksPayload,
 } from "@/lib/client";
 import type { ListUser, Monitor, Project } from "@/lib/types";
 
@@ -174,10 +176,19 @@ export function useTasks() {
   });
 }
 
+export function useSearchTasks(payload: SearchTasksPayload) {
+  return useQuery({
+    queryKey: ["tasks", "search", payload],
+    queryFn: () => searchTasksAPI(payload),
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function useSourceStats() {
   return useQuery({
     queryKey: QUERY_KEYS.sourceStats,
-    queryFn: () => getSourceStats(),
+    queryFn: () => getSourceStatsAPI(),
     staleTime: 5 * 60 * 1000,
   });
 }

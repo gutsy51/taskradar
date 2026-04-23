@@ -14,6 +14,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+    "corsheaders",
     "accounts.apps.AccountsConfig",
     "datasets.apps.DatasetsConfig",
     "search.apps.SearchConfig",
@@ -21,6 +22,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -97,3 +99,5 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "Europe/Moscow"
 CELERY_ENABLE_UTC = True
 CELERY_WORKER_POOL = "solo"  # Windows не поддерживает prefork
+
+CORS_ALLOW_ALL_ORIGINS = True

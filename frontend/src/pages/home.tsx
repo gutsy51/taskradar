@@ -8,11 +8,10 @@ import {
   IconTrendingUp,
 } from "@tabler/icons-react";
 import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSourceStats, useTasks } from "@/hooks/use-api";
+import { useSearchTasks, useSourceStats } from "@/hooks/use-api";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -32,11 +31,11 @@ const SOURCE_BORDER: Record<string, string> = {
   "workzilla.com":   "border-l-amber-500",
 };
 
-function formatPrice(price_amount: number | null, currency: string) {
-  if (price_amount === null) return null;
-  if (price_amount === 0) return "по договорённости";
-  const symbol = currency === "RUB" ? "₽" : currency;
-  return `${price_amount.toLocaleString("ru-RU")} ${symbol}`;
+function formatPrice(price: number | null, currency: string) {
+  if (price === null) return null;
+  if (price === 0) return "по договорённости";
+  const symbol = currency === "RUB" ? "₽" : currency || "₽";
+  return `${price.toLocaleString("ru-RU")} ${symbol}`;
 }
 
 function formatRelativeTime(dateStr: string) {
@@ -49,7 +48,7 @@ function formatRelativeTime(dateStr: string) {
 }
 
 function RecentTaskCard({ task }: { task: Task }) {
-  const price = formatPrice(task.price_amount, task.currency);
+  const price = formatPrice(task.price, task.price_currency);
   const sourceStyle = SOURCE_STYLES[task.source] ?? "bg-gray-100 text-gray-800";
   const borderStyle = SOURCE_BORDER[task.source] ?? "border-l-gray-400";
 
@@ -71,7 +70,7 @@ function RecentTaskCard({ task }: { task: Task }) {
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {formatRelativeTime(task.parsed_at)}
+              {formatRelativeTime(task.published_at ?? task.collected_at)}
             </span>
             <a href={task.url} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
@@ -87,17 +86,16 @@ function RecentTaskCard({ task }: { task: Task }) {
 }
 
 export default function Home() {
-  const { data: tasks, isLoading: tasksLoading, refetch: refetchTasks } = useTasks();
+  const { data: searchResult, isLoading: tasksLoading, refetch: refetchTasks } = useSearchTasks({ limit: 5 });
   const { data: sources, isLoading: sourcesLoading, refetch: refetchSources } = useSourceStats();
 
   const isLoading = tasksLoading || sourcesLoading;
 
-  const totalTasks    = sources?.reduce((s, x) => s + x.total, 0) ?? 0;
-  const newToday      = sources?.reduce((s, x) => s + x.new_today, 0) ?? 0;
-  const sourcesCount  = sources?.length ?? 0;
-  const withPrice     = tasks?.filter((t) => t.price_amount !== null && t.price_amount > 0).length ?? 0;
+  const totalTasks   = sources?.reduce((s, x) => s + x.total, 0) ?? 0;
+  const newToday     = sources?.reduce((s, x) => s + x.new_today, 0) ?? 0;
+  const sourcesCount = sources?.length ?? 0;
 
-  const recentTasks = tasks?.slice(0, 5) ?? [];
+  const recentTasks = searchResult?.items ?? [];
 
   const handleRefresh = () => {
     refetchTasks();
@@ -173,14 +171,14 @@ export default function Home() {
 
             <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">С указанной ценой</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Найдено по запросу</CardTitle>
                 <IconCurrencyRubel className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-                  {withPrice.toLocaleString("ru-RU")}
+                  {(searchResult?.total ?? 0).toLocaleString("ru-RU")}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">из {tasks?.length ?? 0} показанных</p>
+                <p className="text-xs text-muted-foreground mt-1">последних заданий</p>
               </CardContent>
             </Card>
           </>
@@ -229,7 +227,7 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <IconClock className="h-3 w-3" />
-                      {formatRelativeTime(src.last_parsed)}
+                      {src.last_parsed ? formatRelativeTime(src.last_parsed) : "—"}
                     </div>
                   </CardContent>
                 </Card>

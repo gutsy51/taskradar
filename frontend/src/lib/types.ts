@@ -88,21 +88,33 @@ export interface PatchedAlertRule extends Partial<AlertRule> {
 // TaskRadar — агрегатор фриланс-заданий
 export interface Task {
   id: number;
+  source: string;
+  source_base_url: string;
   title: string;
   description: string;
-  currency: string;
   url: string;
-  source: string;
-  parsed_at: string;
-  content_hash: string;
-  price_amount: number | null;
-  is_deleted: boolean;
+  price: number | null;
+  price_currency: string;
   published_at: string | null;
+  collected_at: string;
+  is_deleted: boolean;
+  cleaned_text: string;
+  similarity: number | null;
+}
+
+export interface SearchResult {
+  total: number;
+  limit: number;
+  offset: number;
+  sort: string;
+  query: string;
+  applied_filters: Record<string, unknown>;
+  items: Task[];
 }
 
 export interface SourceStats {
   source: string;
   total: number;
   new_today: number;
-  last_parsed: string;
+  last_parsed: string | null;
 }

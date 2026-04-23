@@ -55,7 +55,7 @@ def sync_projects(projects: list, source: str) -> dict:
     if not projects:
         return {'saved': 0, 'deleted': 0, 'restored': 0}
 
-    from backend.datasets.models import Post, Source
+    from datasets.models import Post, Source
 
     source_obj, _ = Source.objects.get_or_create(
         name=source,

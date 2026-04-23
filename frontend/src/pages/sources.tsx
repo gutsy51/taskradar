@@ -167,7 +167,7 @@ export default function Sources() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <IconClock className="h-3.5 w-3.5 shrink-0" />
-                          Обновлено {formatRelativeTime(src.last_parsed)}
+                          {src.last_parsed ? `Обновлено ${formatRelativeTime(src.last_parsed)}` : "Нет данных"}
                         </div>
                       </div>
                     </CardContent>

@@ -276,9 +276,7 @@ class FLParser:
                                 By.CSS_SELECTOR, ".b-post__grid_price .text-4"
                             )
                             price_text = self.driver.execute_script(
-                                "return Array.from(arguments[0].childNodes)"
-                                ".filter(n => n.nodeType === 3)"
-                                ".map(n => n.textContent).join('').trim()",
+                                "return arguments[0].textContent.trim()",
                                 price_span
                             ) or ""
                         except NoSuchElementException:
@@ -376,11 +374,8 @@ class FLParser:
                     # Берем только первый span внутри этого div
                     try:
                         price_span = budget_div.find_element(By.XPATH, "./span[1]")
-                        # Используем JavaScript чтобы взять только прямой текстовый контент (без вложенных элементов)
                         price_text = self.driver.execute_script(
-                            "return Array.from(arguments[0].childNodes)"
-                            ".filter(n => n.nodeType === 3)"
-                            ".map(n => n.textContent).join('').trim()",
+                            "return arguments[0].textContent.trim()",
                             price_span
                         )
                     except NoSuchElementException:
@@ -395,9 +390,7 @@ class FLParser:
                     try:
                         price_span = payment_div.find_element(By.XPATH, "./span[1]")
                         price_text = self.driver.execute_script(
-                            "return Array.from(arguments[0].childNodes)"
-                            ".filter(n => n.nodeType === 3)"
-                            ".map(n => n.textContent).join('').trim()",
+                            "return arguments[0].textContent.trim()",
                             price_span
                         )
                     except NoSuchElementException:
