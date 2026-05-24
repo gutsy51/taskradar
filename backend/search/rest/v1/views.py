@@ -66,6 +66,7 @@ class SearchView(View):
             "published_to": request.GET.get("published_to"),
             "collected_from": request.GET.get("collected_from"),
             "collected_to": request.GET.get("collected_to"),
+            "price_mode": request.GET.get("price_mode"),
             "price_is_specified": request.GET.get("price_is_specified"),
             "price_currency": request.GET.getlist("price_currency")
             or request.GET.get("price_currency"),

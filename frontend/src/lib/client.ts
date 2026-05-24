@@ -523,8 +523,13 @@ backendClient.interceptors.request.use((config) => {
 
 export interface SearchTasksPayload {
   query?: string;
+  keywords?: string;
   source?: string[];
+  from_date?: string;
+  to_date?: string;
+  price_mode?: "any" | "specified" | "unspecified" | "negotiable";
   price_is_specified?: boolean;
+  price_currency?: string[];
   price_min?: number;
   price_max?: number;
   sort?: "relevance" | "freshness" | "price_asc" | "price_desc";

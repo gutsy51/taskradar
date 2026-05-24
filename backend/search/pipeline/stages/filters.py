@@ -42,7 +42,13 @@ class FilterStage:
                 source_filter |= Q(source__name__in=named)
             queryset = queryset.filter(source_filter)
 
-        if params.price.is_specified is True:
+        if params.price.mode == "specified":
+            queryset = queryset.filter(price__gt=0)
+        elif params.price.mode == "unspecified":
+            queryset = queryset.filter(price__isnull=True)
+        elif params.price.mode == "negotiable":
+            queryset = queryset.filter(price=0)
+        elif params.price.is_specified is True:
             queryset = queryset.filter(price__gt=0)
         elif params.price.is_specified is False:
             queryset = queryset.filter(Q(price__isnull=True) | Q(price__lte=0))
@@ -99,7 +105,13 @@ class FilterStage:
 
             queryset = queryset.filter(source_filter)
 
-        if params.price.is_specified is True:
+        if params.price.mode == "specified":
+            queryset = queryset.filter(post__price__gt=0)
+        elif params.price.mode == "unspecified":
+            queryset = queryset.filter(post__price__isnull=True)
+        elif params.price.mode == "negotiable":
+            queryset = queryset.filter(post__price=0)
+        elif params.price.is_specified is True:
             queryset = queryset.filter(post__price__gt=0)
         elif params.price.is_specified is False:
             queryset = queryset.filter(Q(post__price__isnull=True) | Q(post__price__lte=0))

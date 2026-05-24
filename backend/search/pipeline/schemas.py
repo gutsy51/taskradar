@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from enum import StrEnum
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -34,6 +34,7 @@ class SearchDateRange(BaseModel):
 class SearchPriceFilter(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    mode: Literal["any", "specified", "unspecified", "negotiable"] = "any"
     is_specified: bool | None = None
     currency: list[str] = Field(default_factory=list)
     min_amount: int | None = Field(default=None, alias="min")
@@ -88,6 +89,16 @@ class SearchPriceFilter(BaseModel):
                 "Фильтры валюты и суммы нельзя использовать вместе с is_specified=false"
             )
 
+        if self.mode in {"unspecified", "negotiable"} and (
+            self.currency or self.min_amount is not None or self.max_amount is not None
+        ):
+            raise ValueError(
+                "Фильтры валюты и суммы можно использовать только для цены с указанной суммой"
+            )
+
+        if self.mode == "specified" and self.is_specified is False:
+            raise ValueError("price.mode=specified несовместим с is_specified=false")
+
         return self
 
 
@@ -127,6 +138,7 @@ class SearchParams(BaseModel):
         payload["collected_at"] = collected_at
 
         price = cls.__extract_nested_filter(payload, "price")
+        cls.__set_nested_value(price, "mode", payload.pop("price_mode", None))
         cls.__set_nested_value(price, "is_specified", payload.pop("price_is_specified", None))
         cls.__set_nested_value(price, "currency", payload.pop("price_currency", None))
         cls.__set_nested_value(price, "min", payload.pop("price_min", None))
